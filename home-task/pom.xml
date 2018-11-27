@@ -46,7 +46,7 @@
       <archive>
         <manifest>
           <addClasspath>true</addClasspath>
-          <mainClass>com.test.Test</mainClass>
+          <mainClass>com.test.Project</mainClass>
         </manifest>
       </archive>
       <descriptorRefs>
