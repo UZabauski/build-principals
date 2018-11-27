@@ -1,6 +1,6 @@
 package com.test;
 
-import org.apache.commons.collections.Predicate;
+import org.apache.commons.collections4.Predicate;
 import org.apache.log4j.Logger;
 
 class Project {
@@ -16,3 +16,4 @@ class Project {
   public static void main(String[] args) {
     System.out.println(new Project().getGreeting());
   }
+}
