@@ -1,4 +1,4 @@
-pply plugin: 'java'
+apply plugin: 'java'
 
 
 group = 'com.mnt.training'
