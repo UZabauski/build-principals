@@ -6,9 +6,6 @@ version = '1.0-SNAPSHOT'
 
 description = """gradle-simple-sample"""
 
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
-
 
 repositories {
         
@@ -25,3 +22,17 @@ jar {
     attributes("Main-Class": 'com.test.Project')
     }
 }
+
+build {
+    check.dependsOn.remove(test)
+}
+
+test.dependsOn build
+
+task hello {
+    dependsOn test
+    doLast {
+        println 'hello task'
+    }
+}
+
