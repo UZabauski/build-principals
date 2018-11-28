@@ -1,0 +1,12 @@
+pply plugin: 'java'
+
+
+group = 'com.mnt.training'
+version = '1.0'
+
+description = """MyBuildedApplication"""
+
+sourceCompatibility = 1.5
+targetCompatibility = 1.5
+
+jar.baseName = "hello-" + System.getenv('BUILD_NUMBER')
