@@ -1,1 +1,8 @@
 apply plugin: 'java'
+repositories {
+    mavenCentral()
+}
+dependencies {
+    compile group: 'org.apache.directory.studio', name: 'org.apache.commons.collections', version: '3.2.1'
+    compile group: 'log4j', name: 'log4j', version: '1.2.17'
+}
