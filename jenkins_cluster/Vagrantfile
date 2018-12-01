@@ -1,0 +1,32 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure("2") do |config|
+
+    config.vm.box = "sbeliakou/centos"
+    config.vm.box_check_update = false
+  
+        config.vm.define "jenkinsmaster" do |jenkins|
+        jenkins.vm.hostname = "jenkinsmaster"
+        jenkins.vm.network "private_network", ip: "192.168.115.70"
+        jenkins.vm.provider "virtualbox" do |vb|  
+            vb.memory = "2048"
+            vb.gui = false
+            vb.name = "jenkins_master"
+            end
+        jenkins.vm.provision 'shell', path: "jenkins_master.sh"
+        end
+
+        (1..2).each do |i|
+        config.vm.define "jenkins_slave#{i}" do |jenkins|
+        jenkins.vm.hostname = "jenkinsslave"
+        jenkins.vm.network "private_network", ip: "192.168.115.#{i+70}"
+        jenkins.vm.provider "virtualbox" do |vb|  
+            vb.memory = "1024"
+            vb.gui = false
+            vb.name = "jenkins_slave#{i}"
+            end
+        jenkins.vm.provision 'shell', path: "jenkins#{i}.sh"
+           end
+        end
+end
