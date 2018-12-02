@@ -228,12 +228,3 @@ sudo systemctl start nginx
 sudo systemctl enable nginx
 sudo systemctl status nginx
 
-if [ -a /opt/jenkins/.jenkins/.ssh/id_rsa ]; then
-    positive "id_rsa already exist"
-else
-    cd /home/vagrant/.ssh/
-    ssh-keygen -b 2048 -f id_rsa -t rsa -N ''
-    sudo mkdir -p /opt/jenkins/.jenkins/.ssh/
-    sudo mv id_rsa* /opt/jenkins/.jenkins/.ssh/
-    sudo chown jenkins:jenkins /opt/jenkins/.jenkins/.ssh/id_rsa*
-fi
