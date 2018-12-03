@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.test.UnitTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2018-11-28T15:00:54" hostname="EPBYMINW5357" time="0.006">
-  <properties/>
-  <testcase name="test" classname="com.test.UnitTest" time="0.006"/>
-  <testcase name="testAppHasAGreeting" classname="com.test.UnitTest" time="0.0"/>
-  <system-out><![CDATA[test
-]]></system-out>
-  <system-err><![CDATA[]]></system-err>
-</testsuite>

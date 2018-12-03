@@ -49,76 +49,101 @@ else
     rtrnCd_paranoia "$?" "Installation of jdk from $java_download_filename was successfull" "Intalation of jdk from $java_download was unsuccessfull"    
 fi 
 
-#JENKINS PART
-JENKINS_LINK="http://mirrors.jenkins.io/war-stable/latest/jenkins.war"
-JENKINS_HOME="/opt/jenkins"
+#POSTGRES PART
 
-positive "Creating group jenkins"
-getent group jenkins
-rtrnCd="$?"
-if [[ "$rtrnCd" -eq 0 ]]; then
-    positive "Group jenkins already exist. Skipping step"
+yum list installed | grep -i "postgresql"
+rtrnCd=$?
+
+if [ $rtrnCd -ne 0 ]; then
+    positive "Installing PostgreSQL"
+    sudo yum -y install postgresql-server postgresql-contrib 
+    rtrnCd_paranoia "$?" "Postgress server was successfully installed" "Postgress server was not installed"
+    sudo postgresql-setup initdb
+    rtrnCd_paranoia "$?" "Postgress setup init db was ok" "Postgress setup init db was failed"
+    sudo systemctl enable postgresql
+    sudo systemctl start postgresql
+    sudo -su postgres psql -c "create user sonar;"
+    sudo -su postgres psql -c "alter role sonar with createdb;"
+    sudo -su postgres psql -c "alter user sonar with password 'sonar';"
+    sudo -su postgres psql -c "\du"
+    sudo -su postgres psql -c "create database sonar WITH ENCODING 'UTF8' owner sonar TEMPLATE=template0;"
+    sudo -su postgres psql -c "grant all privileges on database sonar to sonar;"
+    sudo -su postgres psql -c "\l"
+    sudo sed -i '82s/ident/md5/' /var/lib/pgsql/data/pg_hba.conf
+    #sudo sed -i '80s/peer/md5/' /var/lib/pgsql/data/pg_hba.conf
+    sudo systemctl enable postgresql
+    sudo systemctl restart postgresql 
 else
-    positive "Creating group jenkins"
-    sudo groupadd jenkins
-    rtrnCd_paranoia "$?" "Group add was ok" "Group add failed"
+    positive "Postgres database is already provisioned"
 fi
 
-positive "Creating user jenkins"
-id jenkins
-rtrnCd="$?"
-if [[ "$rtrnCd" -eq 0 ]]; then
-    positive "User jenkins already exist. Skipping step"
+if [ -a sonarqube-6.7.6.zip ]; then
+    positive "Skipping SONAR step"
 else
-    positive "Creating user jenkins"
-    sudo useradd -M -s /bin/nologin -g jenkins -d "$JENKINS_HOME" jenkins
-    rtrnCd_paranoia "$?" "User jenkins add was ok" "User add jenkins failed"
-fi
-
-positive "Creating /opt/jenkins folder"
-sudo mkdir -p "$JENKINS_HOME"
-rtrnCd_paranoia "$?" "Creating /opt/jenkins folder was OK" "Creating /opt/jenkins folder failed" 
-
-positive "Downloading jenkins war"
-ls -1 ./jenkins.war 
-rtrnCd="$?"
-if [[ "$rtrnCd" -eq 0 ]]; then
-    positive "Jenkins war is already exist. Skipping step"
-else
-    positive "Downloading jenkins by $JENKINS_LINK"
-    curl -L --remote-name "$JENKINS_LINK"
-    rtrnCd_paranoia "$?" "Downloading jenkins was OK" "Downoloading jenkins failed" 
-fi
-
-sudo cp jenkins.war "$JENKINS_HOME"
-rtrnCd_paranoia "$?" "Moving jenkins.war was OK" "Moving jenkins.war failed"
-
-sudo chown -R jenkins:jenkins "$JENKINS_HOME"
-sudo touch /etc/systemd/system/jenkins.service
-
-JENKINS_SERVICE_OPTIONS="
+    wget https://binaries.sonarsource.com/Distribution/sonarqube/sonarqube-6.7.6.zip
+    sudo yum -y install unzip
+    sudo unzip sonarqube-6.7.6.zip -d /opt
+    sudo mkdir -p /opt/sonarqube
+    sudo mv /opt/sonarqube-6.7.6/* /opt/sonarqube
+    
+    positive "Creating group sonar"
+    getent group sonar
+    rtrnCd="$?"
+    if [[ "$rtrnCd" -eq 0 ]]; then
+        positive "Group sonar already exist. Skipping step"
+    else
+        positive "Creating group sonar"
+        sudo groupadd sonar
+        rtrnCd_paranoia "$?" "Group add was ok" "Group add failed"
+    fi
+    
+    positive "Creating user sonar"
+    id sonar
+    rtrnCd="$?"
+    if [[ "$rtrnCd" -eq 0 ]]; then
+        positive "User sonar already exist. Skipping step"
+    else
+        positive "Creating user sonar"
+        sudo useradd -M -s /bin/nologin -g sonar -d /opt/sonarqube/ sonar
+        rtrnCd_paranoia "$?" "User sonar add was ok" "User add sonar failed"
+    fi
+    
+    sudo chown -R sonar:sonar /opt/sonarqube/ 
+    sudo sed -i 's:^#sonar.jdbc.username=:sonar.jdbc.username=sonar:' /opt/sonarqube/conf/sonar.properties;
+    sudo sed -i 's:^#sonar.jdbc.password=:sonar.jdbc.password=sonar:' /opt/sonarqube/conf/sonar.properties;
+    sudo sed -i 's/^#sonar.jdbc.url=jdbc:postgresql/sonar.jdbc.url=jdbc:postgresql/' /opt/sonarqube/conf/sonar.properties;
+    sudo sed -i 's/^#sonar.web.port=9000/sonar.web.port=9000/' /opt/sonarqube/conf/sonar.properties;
+    
+    sudo touch /etc/systemd/system/sonar.service
+    
+    sudo sysctl -w vm.max_map_count=262144
+    sudo sysctl -w fs.file-max=65536
+    
+    SONAR_CONFIG='
 [Unit]
-Description=Jenkins Service
-After=network.target
+Description=SonarQube service
+After=syslog.target network.target
 
 [Service]
-Type=simple
-User=jenkins
+Type=forking
 
-WorkingDirectory=$JENKINS_HOME
-ExecStart=/usr/java/jdk1.8.0_192-amd64/jre/bin/java -Xms1500M -Xmx3000M -jar $JENKINS_HOME/jenkins.war
-ExecStop=/bin/kill -15 $MAINPID
+ExecStart=/opt/sonarqube/bin/linux-x86-64/sonar.sh start
+ExecStop=/opt/sonarqube/bin/linux-x86-64/sonar.sh stop
+
+User=sonar
+Group=sonar
 Restart=always
+LimitNOFILE=65536
+LimitNPROC=2048
 
 [Install]
 WantedBy=multi-user.target
-"
-sudo echo "$JENKINS_SERVICE_OPTIONS" | sudo tee /etc/systemd/system/jenkins.service
-
-sudo systemctl daemon-reload
-sudo systemctl start jenkins
-sudo systemctl enable jenkins
-sudo systemctl status jenkins
+'
+    sudo echo "$SONAR_CONFIG" | sudo tee /etc/systemd/system/sonar.service
+    sudo systemctl enable sonar
+    sudo systemctl start sonar
+    sudo systemctl status sonar
+fi
 
 positive "Creating group nginx"
 getent group nginx
@@ -142,7 +167,6 @@ else
     rtrnCd_paranoia "$?" "User nginx add was ok" "User add nginx failed"
 fi
 
-
 yum list installed | grep -i nginx
 rtrnCd=$?
 if [ $rtrnCd -ne 0 ]; then  
@@ -162,18 +186,18 @@ events {
 }
 
 http {
-upstream jenkins {
+upstream sonar {
   keepalive 32; # keepalive connections
-  server 127.0.0.1:8080; # jenkins ip and port
+  server 127.0.0.1:9000;
 }
 
 server {
   listen          80;       # Listen on port 80 for IPv4 requests
 
-  server_name     jenkins.example.com;
+  server_name     sonar.example.com;
 
   #this is the jenkins web root directory (mentioned in the /etc/default/jenkins file)
-  root            /opt/jenkins/.jenkins/war/;
+  root            /opt/sonarqube/web/;
 
   ignore_invalid_headers off; #pass through headers from Jenkins which are considered invalid by Nginx server.
 
@@ -185,19 +209,18 @@ server {
 
   location /userContent {
     #have nginx handle all the static requests to the userContent folder files
-    #note : This is the $JENKINS_HOME dir
-	root /opt/jenkins/.jenkins/war/;
+    root /opt/sonarqube/web/;
     if (!-f $request_filename){
       #this file does not exist, might be a directory or a /**view** url
       rewrite (.*) /$1 last;
-	  break;
+     break;
     }
-	sendfile on;
+    sendfile on;
   }
 
   location / {
       sendfile off;
-      proxy_pass         http://jenkins;
+      proxy_pass         http://sonar;
       proxy_redirect     default;
       proxy_http_version 1.1;
 
@@ -227,9 +250,4 @@ sudo systemctl daemon-reload
 sudo systemctl start nginx
 sudo systemctl enable nginx
 sudo systemctl status nginx
-
-#CLI for sonar
-wget https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-3.2.0.1227.zip
-sudo yum -y install unzip
-sudo unzip sonar-scanner-cli-3.2.0.1227.zip -d /opt/
 
