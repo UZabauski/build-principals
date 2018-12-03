@@ -13,6 +13,10 @@ class Project {
     System.out.println("test");
   }
 
+   public static void text() {
+    System.out.println("text");
+  }
+ 
   public static void main(String[] args) {
     System.out.println(new Project().getGreeting());
   }
