@@ -17,3 +17,4 @@ class Project {
     System.out.println(new Project().getGreeting());
   }
 }
+class forSonar{}
