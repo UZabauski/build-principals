@@ -9,10 +9,6 @@ class Project {
         return "Hello, MNT Lab!";
     }
  
- public String getGreetinggg() {
-        return "Hello, MNT Lab!";
-    }
-
   public static void test() {
     System.out.println("test");
   }
