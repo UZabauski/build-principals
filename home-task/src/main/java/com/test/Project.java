@@ -7,17 +7,13 @@ class Project {
 
  public String getGreeting() {
         return "Hello, MNT Lab!";
-    }
+  }
  
- public String getGoodbye() {
-        return "Goodbye, MNT Lab!";
-    }
- 
-  public static void test() {
+ public static void test() {
     System.out.println("test");
   }
 
-  public static void main(String[] args) {
+ public static void main(String[] args) {
     System.out.println(new Project().getGreeting());
   }
 }
