@@ -19,6 +19,14 @@ Vagrant.configure("2") do |config|
         end
         default.vm.provision "shell", path: "install_sonar.sh", privileged: false
     end
+    config.vm.define "nexus" do |default|
+        default.vm.box = "sbeliakou/centos"
+        default.vm.network "private_network", ip: "192.168.56.81"
+        default.vm.provider "virtualbox" do |v|
+          v.memory = 1000
+        end
+        default.vm.provision "shell", path: "install_nexus.sh", privileged: false
+    end
     # (1..nubmer_of_nodes).each do |i|
     # config.vm.define "node_#{i}" do |node|
         # node.vm.box = "sbeliakou/centos"
