@@ -45,5 +45,12 @@
     </plugin>
   </plugins>
 </build>
+<distributionManagement>
+         <repository>
+             <id>releases</id>
+             <name>releases</name>
+             <url>http://192.168.10.11:8081/repository/releases/</url>
+         </repository>
+    </distributionManagement>         
 </project>
 
