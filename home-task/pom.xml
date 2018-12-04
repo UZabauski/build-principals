@@ -24,7 +24,13 @@
             </plugin>
         </plugins>
     </build>
-
+    <distributionManagement>
+         <repository>
+             <id>deployment</id>
+             <name>Internal Releases</name>
+             <url>http://192.168.39.120:8081/repository/sample/</url>
+         </repository>
+    </distributionManagement>
     <dependencies>   
         <dependency>
             <groupId>commons-collections</groupId>
