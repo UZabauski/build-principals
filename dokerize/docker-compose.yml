@@ -1,0 +1,58 @@
+#docker-compose.yml
+
+version: '3'
+
+services:
+  jenkins:
+    image: jenkins/jenkins
+    ports:
+      - 50000:50000
+      - 8080:8080
+    volumes:
+      - /opt/jenkins_home:/var/jenkins_home
+    networks:
+      ci-cd:
+        ipv4_address: 123.45.0.2
+  nexus-repository:
+    image: sonatype/nexus3
+    volumes:
+      - /opt/nexus-data:/nexus-data
+    networks:
+      ci-cd:
+        ipv4_address: 123.45.0.3
+  nginx:
+    build: ./nginx
+    ports:
+      - '443:443'
+      - '5000:5000'
+    command: [ nginx, '-g', 'daemon off;' ]
+    depends_on: 
+      - jenkins
+      - nexus-repository
+    networks:
+      ci-cd:
+        ipv4_address: 123.45.0.4
+
+networks:
+  ci-cd:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 123.45.0.0/16
+        
+  #here
+  #sonar:
+  #  image: sonarqube:lts
+  #  ports:
+  #    - 9000:9000
+  #  environment:
+  #    - sonar.jdbc.username=sonar
+  #    - sonar.jdbc.password=sonar
+  #    - sonar.jdbc.url=jdbc:postgresql://localhost/sonar
+  #  volumes:
+  #    - /opt/sonarqube/conf:/opt/sonarqube/conf
+  #    - /opt/sonarqube/data:/opt/sonarqube/data
+  #    - /opt/sonarqube/logs:/opt/sonarqube/logs
+  #    - /opt/sonarqube/extensions:/opt/sonarqube/extensions
+  #postgre.
